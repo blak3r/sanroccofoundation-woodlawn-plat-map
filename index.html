@@ -1,0 +1,79 @@
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<div id="platMap" style="width:100%;height:650px;"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const IMG_URL  = 'https://images.squarespace-cdn.com/content/59f8e7d551a584524dbcff39/4b184372-574a-43c1-abcc-57253fd9cab5/platmap_woodlawn_1923_3300.png?content-type=image%2Fpng';
+    const IMG_W    = 3300;   // image width  px
+    const IMG_H    = 3795;   // image height px
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypc_NZYMZ7R_4bUbbK4I80sjjq-5tlRvPIN2HIfIYTeBu-9bSAWyu76XT937RDgYzs/exec';
+
+    /* 1. Build a Leaflet map that treats pixels as coordinates */
+    const map = L.map('platMap', {crs: L.CRS.Simple, minZoom:-2});
+    const bounds = [[0,0],[IMG_H,IMG_W]];
+    L.imageOverlay(IMG_URL, bounds).addTo(map);
+    map.fitBounds(bounds);
+
+    // --- 1.  READ existing pins via JSONP ------------------------------
+    function loadPins() {
+        // Each call gets a unique cache‑buster
+        const url = `${SCRIPT_URL}?callback=renderPins&_=${Date.now()}`;
+        const tag = document.createElement('script');
+        tag.src = url;
+        document.body.appendChild(tag);
+    }
+
+    function addMarker({x, y, name}) {
+        L.marker([y,x]).addTo(map).bindPopup(`<strong>${name}</strong>`);
+    }
+
+    // This is the global callback Apps Script will call
+    function renderPins(rows) {
+        rows.forEach(addMarker);     // your existing addMarker() function
+    }
+
+    // Call it once on page load
+    loadPins();
+
+    // --- 2.  WRITE stays exactly as you have it ------------------------
+    map.on('click', e => {
+        const name = prompt('Who lived here in the 1920s?');
+        if (!name) return;
+
+        const {lat:y, lng:x} = e.latlng;
+        addMarker({name,x,y});       // optimistic UI
+
+        fetch(SCRIPT_URL, {
+            method:'POST',
+            headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body: JSON.stringify({name,x,y})
+        });
+    });
+
+    //
+    // /* 2. Load existing pins */
+    // fetch(SCRIPT_URL)                 // no custom headers → “simple” request
+    //     .then(r => r.json())            // Apps Script now answers with CORS header
+    //     .then(rows => rows.forEach(addMarker));
+    //
+    // function addMarker({x, y, name}) {
+    //     L.marker([y,x]).addTo(map).bindPopup(`<strong>${name}</strong>`);
+    // }
+    //
+    // /* 3. Allow visitors to add a pin */
+    // map.on('click', e => {
+    //     const name = prompt('Who lived here in the 1920s?');
+    //     if (!name) return;
+    //
+    //     const {lat:y, lng:x} = e.latlng;      // note: CRS.Simple uses y,x
+    //     addMarker({x,y,name});                // instant feedback
+    //
+    //     fetch(SCRIPT_URL, {
+    //         method: 'POST',
+    //         redirect: 'follow',
+    //         headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids pre‑flight
+    //         body: JSON.stringify({name, x, y})
+    //     });
+    // });
+</script>
