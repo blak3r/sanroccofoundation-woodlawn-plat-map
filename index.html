@@ -1,7 +1,28 @@
+<!-- SweetAlert2 (MIT, 12 kB gzipped) -->
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+<style>
+    /* 2‑a  Bigger pin labels on small screens */
+    @media (max-width: 768px){
+        .leaflet-popup-content{
+            font-size: 1.1rem;      /* ≈17‑18 px */
+            line-height: 1.35;
+        }
+    }
+
+    /* 2‑b  Make sure SweetAlert’s text input has a visible border in iOS */
+    .swal2-input{
+        border: 1px solid #aaa !important;
+    }
+</style>
+
+
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<h2>Woodlawn 1923 Plat Map</h2>
-<p>Click to add a pin to the map to identify where your family lived!  Your changes will be saved to our records and be live for others to see immediately!</p>
+<h2>Aliquippa Woodlawn Plat Map</h2>
+<p>This is an interactive map.  Click on one of the blue markers to see which family lived on each parcel.  Want to add your family? Simply double click on the map and fill in the name.  Your changes will be saved an immediately viewable to others.</p>
 If you make a mistake, please email <a href="mailto:sanroccofoundation@gmail.com">sanroccofoundation@gmail.com</a> and indicate the family name you entered and we'll update it!</p>
 <div id="platMap" style="width:100%;height:85%;"></div>
 
@@ -39,45 +60,34 @@ If you make a mistake, please email <a href="mailto:sanroccofoundation@gmail.com
     // Call it once on page load
     loadPins();
 
-    // --- 2.  WRITE stays exactly as you have it ------------------------
-    map.on('click', e => {
-        const name = prompt('Who lived here in the 1920s?');
-        if (!name) return;
+    /* -----------------------------------------------------------------------
+       3‑a  Disable map’s own double‑click‑zoom so we can use dbl‑click for pins
+        ------------------------------------------------------------------------ */
+    map.doubleClickZoom.disable();
 
-        const {lat:y, lng:x} = e.latlng;
-        addMarker({name,x,y});       // optimistic UI
+    map.on('dblclick', e => {
+        Swal.fire({
+            title: 'Want to add your family?',
+            text: 'Fill in the name below and click Add Pin.  It\'ll then be live on the site!',
+            input: 'text',
+            inputPlaceholder: 'Name or family',
+            showCancelButton: true,
+            confirmButtonText: 'Add pin',
+            inputValidator: value => !value.trim() && 'Please enter a name'
+        }).then(result => {
+            if (!result.isConfirmed) return;           // user hit “Cancel”
 
-        fetch(SCRIPT_URL, {
-            method:'POST',
-            headers:{'Content-Type':'text/plain;charset=utf-8'},
-            body: JSON.stringify({name,x,y})
+            const name = result.value.trim();
+            const { lat: y, lng: x } = e.latlng;
+
+            addMarker({ name, x, y });                 // optimistic UI
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // CORS‑safe
+                body: JSON.stringify({ name, x, y })
+            });
         });
     });
-
-    //
-    // /* 2. Load existing pins */
-    // fetch(SCRIPT_URL)                 // no custom headers → “simple” request
-    //     .then(r => r.json())            // Apps Script now answers with CORS header
-    //     .then(rows => rows.forEach(addMarker));
-    //
-    // function addMarker({x, y, name}) {
-    //     L.marker([y,x]).addTo(map).bindPopup(`<strong>${name}</strong>`);
-    // }
-    //
-    // /* 3. Allow visitors to add a pin */
-    // map.on('click', e => {
-    //     const name = prompt('Who lived here in the 1920s?');
-    //     if (!name) return;
-    //
-    //     const {lat:y, lng:x} = e.latlng;      // note: CRS.Simple uses y,x
-    //     addMarker({x,y,name});                // instant feedback
-    //
-    //     fetch(SCRIPT_URL, {
-    //         method: 'POST',
-    //         redirect: 'follow',
-    //         headers: {'Content-Type': 'text/plain;charset=utf-8'}, // avoids pre‑flight
-    //         body: JSON.stringify({name, x, y})
-    //     });
-    // });
 </script>
 
