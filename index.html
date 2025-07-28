@@ -22,7 +22,7 @@
 <link rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <h2>Aliquippa Woodlawn Plat Map</h2>
-<p>This is an interactive map.  Click on one of the blue markers to see which family lived on each parcel.  Want to add your family? Simply double click on the map and fill in the name.  Your changes will be saved an immediately viewable to others.</p>
+<p>This is an interactive map.  Click on one of the blue markers to see which family lived at that parcel.  Want to add your family? Simply click on the map and fill in the name.  Your changes will be saved an immediately viewable to others.</p>
 If you make a mistake, please email <a href="mailto:sanroccofoundation@gmail.com">sanroccofoundation@gmail.com</a> and indicate the family name you entered and we'll update it!</p>
 <div id="platMap" style="width:100%;height:85%;"></div>
 
@@ -63,9 +63,9 @@ If you make a mistake, please email <a href="mailto:sanroccofoundation@gmail.com
     /* -----------------------------------------------------------------------
        3‑a  Disable map’s own double‑click‑zoom so we can use dbl‑click for pins
         ------------------------------------------------------------------------ */
-    map.doubleClickZoom.disable();
+    //map.doubleClickZoom.disable();
 
-    map.on('dblclick', e => {
+    map.on('click', e => {
         Swal.fire({
             title: 'Want to add your family?',
             text: 'Fill in the name below and click Add Pin.  It\'ll then be live on the site!',
